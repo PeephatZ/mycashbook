@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -117,9 +118,11 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+body {
+  @apply bg-background text-foreground;
+  font-family: 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -158,6 +161,49 @@
   .flex {
     min-height: 0;
     min-width: 0;
+  }
+
+  /* Elegant card styling */
+  .card-elegant {
+    @apply bg-card text-card-foreground rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  /* Gradient backgrounds */
+  .gradient-income {
+    @apply bg-gradient-to-br from-emerald-500 to-emerald-600;
+  }
+
+  .gradient-expense {
+    @apply bg-gradient-to-br from-rose-500 to-rose-600;
+  }
+
+  .gradient-accent {
+    @apply bg-gradient-to-br from-amber-500 to-amber-600;
+  }
+
+  /* Typography */
+  .text-heading-lg {
+    @apply text-3xl font-bold tracking-tight;
+  }
+
+  .text-heading-md {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .text-heading-sm {
+    @apply text-lg font-semibold;
+  }
+
+  .text-body-lg {
+    @apply text-base font-normal;
+  }
+
+  .text-body-sm {
+    @apply text-sm font-normal;
+  }
+
+  .text-label {
+    @apply text-xs font-medium uppercase tracking-wider;
   }
 
   @media (min-width: 640px) {

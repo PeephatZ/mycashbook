@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, categories, transactions, sheetsExports } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,204 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============ Categories ============
+
+export async function getOrCreateDefaultCategories(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const defaultCategories = [
+    { name: "เงินเดือน", type: "income" as const, icon: "💰" },
+    { name: "ค่าอาหาร", type: "expense" as const, icon: "🍽️" },
+    { name: "ค่าเดินทาง", type: "expense" as const, icon: "🚗" },
+    { name: "ค่าสาธารณูปโภค", type: "expense" as const, icon: "💡" },
+    { name: "ค่าบันเทิง", type: "expense" as const, icon: "🎬" },
+    { name: "ค่าสุขภาพ", type: "expense" as const, icon: "⚕️" },
+    { name: "อื่น ๆ", type: "expense" as const, icon: "📌" },
+  ];
+
+  const existing = await db.select().from(categories).where(eq(categories.userId, userId));
+  
+  if (existing.length === 0) {
+    for (const cat of defaultCategories) {
+      await db.insert(categories).values({
+        userId,
+        name: cat.name,
+        type: cat.type,
+        icon: cat.icon,
+      });
+    }
+  }
+
+  return db.select().from(categories).where(eq(categories.userId, userId));
+}
+
+export async function getCategories(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(categories).where(eq(categories.userId, userId));
+}
+
+// ============ Transactions ============
+
+export async function createTransaction(data: {
+  userId: number;
+  categoryId: number;
+  type: "income" | "expense";
+  amount: string;
+  description?: string;
+  notes?: string;
+  transactionDate: Date;
+  receiptImageUrl?: string;
+  ocrData?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(transactions).values(data);
+  return result;
+}
+
+export async function getTransactions(userId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query: any = db.select().from(transactions).where(eq(transactions.userId, userId));
+
+  if (startDate && endDate) {
+    query = query.where(
+      and(
+        gte(transactions.transactionDate, startDate),
+        lte(transactions.transactionDate, endDate)
+      )
+    );
+  }
+
+  return query.orderBy(desc(transactions.transactionDate));
+}
+
+export async function getTransactionById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await (db
+    .select()
+    .from(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
+    .limit(1) as any);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateTransaction(id: number, userId: number, data: Partial<{
+  categoryId: number;
+  type: "income" | "expense";
+  amount: string;
+  description: string;
+  notes: string;
+  transactionDate: Date;
+  receiptImageUrl: string;
+  ocrData: string;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return (db
+    .update(transactions)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(transactions.id, id), eq(transactions.userId, userId))) as any);
+}
+
+export async function deleteTransaction(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .delete(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
+}
+
+// ============ Dashboard Summary ============
+
+export async function getDashboardSummary(userId: number, month: number, year: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0);
+
+  const monthTransactions = await db
+    .select()
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.transactionDate, startDate),
+        lte(transactions.transactionDate, endDate)
+      )
+    ) as any;
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+  const categoryBreakdown: Record<string, { name: string; amount: number; type: string }> = {};
+
+  for (const tx of monthTransactions) {
+    const amount = parseFloat(tx.amount);
+    if (tx.type === "income") {
+      totalIncome += amount;
+    } else {
+      totalExpense += amount;
+    }
+
+    // Get category info
+    const catQuery = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, tx.categoryId)) as any;
+    const cat = catQuery.limit(1);
+    if (cat.length > 0) {
+      const catName = cat[0].name;
+      if (!categoryBreakdown[catName]) {
+        categoryBreakdown[catName] = { name: catName, amount: 0, type: tx.type };
+      }
+      categoryBreakdown[catName].amount += amount;
+    }
+  }
+
+  return {
+    totalIncome: totalIncome.toFixed(2),
+    totalExpense: totalExpense.toFixed(2),
+    balance: (totalIncome - totalExpense).toFixed(2),
+    categoryBreakdown: Object.values(categoryBreakdown),
+    transactionCount: monthTransactions.length,
+  };
+}
+
+// ============ Google Sheets ============
+
+export async function saveSheetsExport(data: {
+  userId: number;
+  spreadsheetId: string;
+  spreadsheetUrl: string;
+  recordCount: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.insert(sheetsExports).values(data);
+}
+
+export async function getLatestSheetsExport(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(sheetsExports)
+    .where(eq(sheetsExports.userId, userId))
+    .orderBy(desc(sheetsExports.createdAt))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}

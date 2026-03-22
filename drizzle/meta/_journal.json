@@ -1,5 +1,20 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1774183020120,
+      "tag": "0000_whole_vertigo",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1774183115784,
+      "tag": "0001_same_speed",
+      "breakpoints": true
+    }
+  ]
 }
