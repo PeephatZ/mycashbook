@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +24,6 @@ const receiptSchema = z.object({
 type ReceiptFormData = z.infer<typeof receiptSchema>;
 
 export default function ReceiptUpload() {
-  const { user } = useAuth();
   const [, navigate] = useLocation();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,7 +38,7 @@ export default function ReceiptUpload() {
     },
   });
 
-  const { data: categories = [] } = trpc.categories.list.useQuery(undefined, { enabled: !!user });
+  const { data: categories = [] } = trpc.categories.list.useQuery();
 
   const processMutation = trpc.receipt.processImage.useMutation({
     onSuccess: (result) => {
@@ -114,8 +112,6 @@ export default function ReceiptUpload() {
   };
 
   const onSubmit = async (data: ReceiptFormData) => {
-    if (!user) return;
-
     const transactionDate = new Date(data.transactionDate);
     transactionDate.setHours(0, 0, 0, 0);
 

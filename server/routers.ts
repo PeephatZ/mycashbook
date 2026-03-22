@@ -16,6 +16,9 @@ import {
 import { processReceiptImage } from "./receiptOcr";
 import { sheetsRouter } from "./routers/sheetsRouter";
 
+// Use a fixed public user ID for public access (no authentication)
+const PUBLIC_USER_ID = 1;
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -31,14 +34,14 @@ export const appRouter = router({
 
   // Categories
   categories: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return getOrCreateDefaultCategories(ctx.user.id);
+    list: publicProcedure.query(async () => {
+      return getOrCreateDefaultCategories(PUBLIC_USER_ID);
     }),
   }),
 
   // Transactions
   transactions: router({
-    create: protectedProcedure
+    create: publicProcedure
       .input(
         z.object({
           categoryId: z.number(),
@@ -51,31 +54,31 @@ export const appRouter = router({
           ocrData: z.string().optional(),
         })
       )
-      .mutation(async ({ ctx, input }) => {
+      .mutation(async ({ input }) => {
         return createTransaction({
-          userId: ctx.user.id,
+          userId: PUBLIC_USER_ID,
           ...input,
         });
       }),
 
-    list: protectedProcedure
+    list: publicProcedure
       .input(
         z.object({
           startDate: z.date().optional(),
           endDate: z.date().optional(),
         })
       )
-      .query(async ({ ctx, input }) => {
-        return getTransactions(ctx.user.id, input.startDate, input.endDate);
+      .query(async ({ input }) => {
+        return getTransactions(PUBLIC_USER_ID, input.startDate, input.endDate);
       }),
 
-    getById: protectedProcedure
+    getById: publicProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ ctx, input }) => {
-        return getTransactionById(input.id, ctx.user.id);
+      .query(async ({ input }) => {
+        return getTransactionById(input.id, PUBLIC_USER_ID);
       }),
 
-    update: protectedProcedure
+    update: publicProcedure
       .input(
         z.object({
           id: z.number(),
@@ -89,29 +92,29 @@ export const appRouter = router({
           ocrData: z.string().optional(),
         })
       )
-      .mutation(async ({ ctx, input }) => {
+      .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        return updateTransaction(id, ctx.user.id, data);
+        return updateTransaction(id, PUBLIC_USER_ID, data);
       }),
 
-    delete: protectedProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        return deleteTransaction(input.id, ctx.user.id);
+      .mutation(async ({ input }) => {
+        return deleteTransaction(input.id, PUBLIC_USER_ID);
       }),
   }),
 
   // Dashboard
   dashboard: router({
-    summary: protectedProcedure
+    summary: publicProcedure
       .input(
         z.object({
           month: z.number(),
           year: z.number(),
         })
       )
-      .query(async ({ ctx, input }) => {
-        return getDashboardSummary(ctx.user.id, input.month, input.year);
+      .query(async ({ input }) => {
+        return getDashboardSummary(PUBLIC_USER_ID, input.month, input.year);
       }),
   }),
 
@@ -120,7 +123,7 @@ export const appRouter = router({
 
   // Receipt OCR
   receipt: router({
-    processImage: protectedProcedure
+    processImage: publicProcedure
       .input(
         z.object({
           imageUrl: z.string().url(),

@@ -1,16 +1,19 @@
-import { protectedProcedure, router } from "../_core/trpc";
+import { publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { formatTransactionsForSheets, generateCSVContent } from "../googleSheets";
 import { saveSheetsExport } from "../db";
+
+// Use a fixed public user ID for public access (no authentication)
+const PUBLIC_USER_ID = 1;
 
 export const sheetsRouter = router({
   /**
    * Export transactions to CSV format
    * User can download and import to Google Sheets manually
    */
-  exportToCSV: protectedProcedure.query(async ({ ctx }) => {
+  exportToCSV: publicProcedure.query(async () => {
     try {
-      const csvContent = await generateCSVContent(ctx.user.id);
+      const csvContent = await generateCSVContent(PUBLIC_USER_ID);
       const filename = `cashbook_${new Date().toISOString().split("T")[0]}.csv`;
 
       return {
@@ -32,7 +35,7 @@ export const sheetsRouter = router({
   /**
    * Get export history
    */
-  getExportHistory: protectedProcedure.query(async ({ ctx }) => {
+  getExportHistory: publicProcedure.query(async () => {
     try {
       // In a real implementation, you would query the database
       // For now, return empty array
@@ -51,7 +54,7 @@ export const sheetsRouter = router({
   /**
    * Record export to sheets
    */
-  recordExport: protectedProcedure
+  recordExport: publicProcedure
     .input(
       z.object({
         spreadsheetId: z.string(),
@@ -59,10 +62,10 @@ export const sheetsRouter = router({
         recordCount: z.number(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       try {
         await saveSheetsExport({
-          userId: ctx.user.id,
+          userId: PUBLIC_USER_ID,
           spreadsheetId: input.spreadsheetId,
           spreadsheetUrl: input.spreadsheetUrl,
           recordCount: input.recordCount,

@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
@@ -8,7 +7,6 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const [, navigate] = useLocation();
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -16,8 +14,7 @@ export default function Dashboard() {
   const year = currentDate.getFullYear();
 
   const { data: summary, isLoading } = trpc.dashboard.summary.useQuery(
-    { month, year },
-    { enabled: !!user }
+    { month, year }
   );
 
   const handlePreviousMonth = () => {

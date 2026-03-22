@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
@@ -8,7 +7,6 @@ import { Download, ChevronLeft, Check, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Settings() {
-  const { user, logout } = useAuth();
   const [, navigate] = useLocation();
   const [isExporting, setIsExporting] = useState(false);
 
@@ -46,7 +44,6 @@ export default function Settings() {
   };
 
   const handleLogout = async () => {
-    await logout();
     navigate("/");
   };
 
@@ -79,18 +76,8 @@ export default function Settings() {
 
             <div className="space-y-4">
               <div>
-                <p className="text-label text-muted-foreground mb-2">ชื่อ</p>
-                <p className="text-body-lg text-foreground">{user?.name || "ไม่ระบุ"}</p>
-              </div>
-
-              <div>
-                <p className="text-label text-muted-foreground mb-2">อีเมล</p>
-                <p className="text-body-lg text-foreground">{user?.email || "ไม่ระบุ"}</p>
-              </div>
-
-              <div>
-                <p className="text-label text-muted-foreground mb-2">วิธีการเข้าสู่ระบบ</p>
-                <p className="text-body-lg text-foreground">{user?.loginMethod || "Manus OAuth"}</p>
+                <p className="text-label text-muted-foreground mb-2">สถานะ</p>
+                <p className="text-body-lg text-foreground">เข้าใช้งานแบบสาธารณะ (ไม่ต้องล็อกอิน)</p>
               </div>
             </div>
           </Card>
@@ -140,13 +127,7 @@ export default function Settings() {
                 ออกจากระบบและกลับไปยังหน้าเข้าสู่ระบบ
               </p>
 
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="w-full border-rose-500 text-rose-500 hover:bg-rose-500/10"
-              >
-                ออกจากระบบ
-              </Button>
+              <p className="text-body-sm text-muted-foreground">เนื่องจากเป็นโหมดสาธารณะ จึงไม่มีการออกจากระบบ</p>
             </div>
           </Card>
 

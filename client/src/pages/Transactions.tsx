@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +24,6 @@ const transactionSchema = z.object({
 type TransactionFormData = z.infer<typeof transactionSchema>;
 
 export default function Transactions() {
-  const { user } = useAuth();
   const [, navigate] = useLocation();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,11 +37,8 @@ export default function Transactions() {
     },
   });
 
-  const { data: categories = [] } = trpc.categories.list.useQuery(undefined, { enabled: !!user });
-  const { data: transactions = [], refetch: refetchTransactions } = trpc.transactions.list.useQuery(
-    {},
-    { enabled: !!user }
-  );
+  const { data: categories = [] } = trpc.categories.list.useQuery();
+  const { data: transactions = [], refetch: refetchTransactions } = trpc.transactions.list.useQuery({});
 
   const createMutation = trpc.transactions.create.useMutation({
     onSuccess: () => {
@@ -67,8 +62,6 @@ export default function Transactions() {
   });
 
   const onSubmit = async (data: TransactionFormData) => {
-    if (!user) return;
-
     const transactionDate = new Date(data.transactionDate);
     transactionDate.setHours(0, 0, 0, 0);
 
