@@ -49,12 +49,7 @@ export const appRouter = router({
           amount: z.string(),
           description: z.string().optional(),
           notes: z.string().optional(),
-          transactionDate: z.union([z.date(), z.number()]).transform((val) => {
-            if (typeof val === 'number') {
-              return new Date(val);
-            }
-            return val;
-          }),
+          transactionDate: z.number().transform((val) => new Date(val)),
           receiptImageUrl: z.string().optional(),
           ocrData: z.string().optional(),
         })
@@ -69,18 +64,8 @@ export const appRouter = router({
     list: publicProcedure
       .input(
         z.object({
-          startDate: z.union([z.date(), z.number()]).transform((val) => {
-            if (typeof val === 'number') {
-              return new Date(val);
-            }
-            return val;
-          }).optional(),
-          endDate: z.union([z.date(), z.number()]).transform((val) => {
-            if (typeof val === 'number') {
-              return new Date(val);
-            }
-            return val;
-          }).optional(),
+          startDate: z.number().transform((val) => new Date(val)).optional(),
+          endDate: z.number().transform((val) => new Date(val)).optional(),
         })
       )
       .query(async ({ input }) => {
@@ -102,12 +87,7 @@ export const appRouter = router({
           amount: z.string().optional(),
           description: z.string().optional(),
           notes: z.string().optional(),
-          transactionDate: z.union([z.date(), z.number()]).transform((val) => {
-            if (typeof val === 'number') {
-              return new Date(val);
-            }
-            return val;
-          }).optional(),
+          transactionDate: z.number().transform((val) => new Date(val)).optional(),
           receiptImageUrl: z.string().optional(),
           ocrData: z.string().optional(),
         })

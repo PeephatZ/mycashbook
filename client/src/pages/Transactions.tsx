@@ -71,7 +71,7 @@ export default function Transactions() {
       amount: data.amount,
       description: data.description,
       notes: data.notes,
-      transactionDate,
+      transactionDate: transactionDate.getTime(),
     });
   };
 

@@ -121,7 +121,7 @@ export default function ReceiptUpload() {
       amount: data.amount,
       description: data.description,
       notes: data.notes,
-      transactionDate,
+      transactionDate: transactionDate.getTime(),
       receiptImageUrl: uploadedImage || undefined,
       ocrData: ocrResult ? JSON.stringify(ocrResult) : undefined,
     });
